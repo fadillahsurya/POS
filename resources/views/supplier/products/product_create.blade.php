@@ -1,0 +1,244 @@
+@extends('layouts.supplier')
+
+@section('content')
+@php
+  $oldFlavors = old('flavors', []);
+  $hasOldFlavors = is_array($oldFlavors) && count($oldFlavors) > 0;
+@endphp
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <div class="card mt-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Tambah Produk Baru</h5>
+        </div>
+
+        <div class="card-body">
+          @if ($errors->any())
+            <div class="alert alert-danger">
+              <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                  <li>{{ $error }}</li>
+                @endforeach
+              </ul>
+            </div>
+          @endif
+
+          <form id="formCreateSupplierProduct" method="POST" action="{{ route('supplier.products.store') }}" enctype="multipart/form-data">
+            @csrf
+
+            <div class="mb-3">
+              <label class="form-label">Nama Produk</label>
+              <input type="text" name="nama_produk" class="form-control" required value="{{ old('nama_produk') }}">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Kode Produk</label>
+              <input type="text" name="kode_produk" class="form-control" required value="{{ old('kode_produk') }}">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Kategori</label>
+              <select name="category_id" class="form-select" required>
+                <option value="">-- Pilih Kategori --</option>
+                @foreach($categories as $cat)
+                  <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
+                    {{ $cat->nama_kategori }}
+                  </option>
+                @endforeach
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Harga Beli</label>
+              <input type="number" name="harga_beli" class="form-control" min="0" step="0.01" required value="{{ old('harga_beli') }}">
+            </div>
+
+            {{-- Stok Supplier (akan auto dari varian bila diaktifkan) --}}
+            <div class="mb-3">
+              <label class="form-label">Stok Supplier</label>
+              <input type="number" name="stok_supplier" id="stok_supplier" class="form-control" min="0" required value="{{ old('stok_supplier') }}">
+              <div class="form-text" id="stokSupplierHint">Isi manual jika tidak menggunakan varian rasa.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Deskripsi</label>
+              <textarea name="deskripsi" class="form-control" rows="2">{{ old('deskripsi') }}</textarea>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Foto Produk (opsional)</label>
+              <input type="file" name="foto[]" class="form-control" accept="image/*" multiple>
+            </div>
+
+            {{-- =========================
+                 VARIAN RASA (opsional)
+               ========================= --}}
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" id="use_flavors" {{ $hasOldFlavors ? 'checked' : '' }}>
+              <label class="form-check-label" for="use_flavors">Produk punya varian rasa</label>
+            </div>
+
+            <div id="flavorsSection" class="border rounded p-3 mb-4 {{ $hasOldFlavors ? '' : 'd-none' }}">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Varian Rasa</h6>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddFlavor">+ Tambah Varian</button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0" id="tblFlavors">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="width:50px">#</th>
+                      <th>Nama Rasa</th>
+                      <th style="width:220px">Harga Tambahan</th>
+                      <th style="width:160px">Stok Varian</th>
+                      <th style="width:70px"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{-- Baris dari old() bila validasi gagal --}}
+                    @if($hasOldFlavors)
+                      @foreach($oldFlavors as $i => $fv)
+                        <tr>
+                          <td class="row-num">{{ $i + 1 }}</td>
+                          <td>
+                            <input type="text" name="flavors[{{ $i }}][nama_rasa]" class="form-control"
+                                   value="{{ $fv['nama_rasa'] ?? '' }}" placeholder="Contoh: Original" required>
+                          </td>
+                          <td>
+                            <div class="input-group">
+                              <span class="input-group-text">Rp</span>
+                              <input type="number" name="flavors[{{ $i }}][harga_tambahan]" class="form-control"
+                                     step="0.01" min="0" value="{{ $fv['harga_tambahan'] ?? 0 }}">
+                            </div>
+                          </td>
+                          <td>
+                            <input type="number" name="flavors[{{ $i }}][stok]" class="form-control flavor-stok"
+                                   min="0" value="{{ $fv['stok'] ?? 0 }}" required>
+                          </td>
+                          <td class="text-center">
+                            <button type="button" class="btn btn-outline-danger btn-sm btnRowRemove">&times;</button>
+                          </td>
+                        </tr>
+                      @endforeach
+                    @endif
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="form-text">
+                Stok supplier akan otomatis = jumlah semua stok varian ketika toggle aktif.
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <button class="btn btn-primary">
+                <i class="bx bx-save"></i> Simpan
+              </button>
+            </div>
+          </form>
+
+          <a href="{{ route('supplier.products.index') }}" class="btn btn-link mt-3">
+            <i class="bx bx-arrow-back"></i> Kembali ke Daftar Produk
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+(function(){
+  const useFlavors   = document.getElementById('use_flavors');
+  const section      = document.getElementById('flavorsSection');
+  const tblBody      = document.querySelector('#tblFlavors tbody');
+  const btnAdd       = document.getElementById('btnAddFlavor');
+  const stokSupInput = document.getElementById('stok_supplier');
+  const stokHint     = document.getElementById('stokSupplierHint');
+  const form         = document.getElementById('formCreateSupplierProduct');
+
+  function toggleFlavorsUI() {
+    const on = useFlavors.checked;
+    section.classList.toggle('d-none', !on);
+    stokSupInput.readOnly = on;
+    stokHint.textContent = on
+      ? 'Stok diisi otomatis dari jumlah stok semua varian.'
+      : 'Isi manual jika tidak menggunakan varian rasa.';
+
+    if (on && tblBody.children.length === 0) addRow(); // baris awal
+    recalcStock();
+  }
+
+  function addRow(data = {}) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="row-num">#</td>
+      <td>
+        <input type="text" name="flavors[][nama_rasa]" class="form-control" placeholder="Contoh: Original" required>
+      </td>
+      <td>
+        <div class="input-group">
+          <span class="input-group-text">Rp</span>
+          <input type="number" name="flavors[][harga_tambahan]" class="form-control" step="0.01" min="0" value="0">
+        </div>
+      </td>
+      <td>
+        <input type="number" name="flavors[][stok]" class="form-control flavor-stok" min="0" value="0" required>
+      </td>
+      <td class="text-center">
+        <button type="button" class="btn btn-outline-danger btn-sm btnRowRemove">&times;</button>
+      </td>
+    `;
+    tblBody.appendChild(tr);
+    if (data.nama_rasa)        tr.querySelector('input[name="flavors[][nama_rasa]"]').value = data.nama_rasa;
+    if (data.harga_tambahan!=null) tr.querySelector('input[name="flavors[][harga_tambahan]"]').value = data.harga_tambahan;
+    if (data.stok!=null)       tr.querySelector('input[name="flavors[][stok]"]').value = data.stok;
+    reindex();
+  }
+
+  function reindex() {
+    [...tblBody.querySelectorAll('tr')].forEach((tr, i) => {
+      tr.querySelector('.row-num').textContent = i + 1;
+      tr.querySelectorAll('input').forEach(inp => {
+        // flavors[][x] -> flavors[i][x]
+        inp.name = inp.name.replace(/flavors\[\d*\]/, `flavors[${i}]`);
+      });
+    });
+    recalcStock();
+  }
+
+  function recalcStock() {
+    if (!useFlavors.checked) return;
+    let total = 0;
+    tblBody.querySelectorAll('.flavor-stok').forEach(inp => {
+      const n = parseInt(inp.value || '0', 10);
+      if (!isNaN(n)) total += n;
+    });
+    stokSupInput.value = total; // sinkron stok supplier
+  }
+
+  // Listeners
+  useFlavors.addEventListener('change', toggleFlavorsUI);
+  if (btnAdd) btnAdd.addEventListener('click', () => addRow());
+  tblBody.addEventListener('input', (e) => {
+    if (e.target.classList.contains('flavor-stok')) recalcStock();
+  });
+  tblBody.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btnRowRemove')) {
+      e.target.closest('tr').remove();
+      if (tblBody.children.length === 0) addRow();
+      reindex();
+    }
+  });
+
+  // Pastikan total stok terset sebelum submit
+  form.addEventListener('submit', () => recalcStock());
+
+  // Init awal
+  toggleFlavorsUI();
+})();
+</script>
+@endpush
