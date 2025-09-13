@@ -8,4 +8,4 @@ Meanwhile, the Admin and Cashier can manage sales, inventory, and reports, while
 This project demonstrates how Laravel can be combined with Bootstrap to deliver a responsive, role-based application that supports both store operations and online transactions in one platform.
 
 ## Demo Video
-[Watch Demo on YouTube](https://drive.google.com/file/d/17g2islBXAaS5mfWa_Ue3BbEXvaL-76wA/view?usp=drive_link)
+[Watch Demo on Google Drive](https://drive.google.com/file/d/17g2islBXAaS5mfWa_Ue3BbEXvaL-76wA/view?usp=drive_link)
